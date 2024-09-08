@@ -43,8 +43,7 @@
     "eslint",
     "prettier"
   ],
-  "author": "Antonio Lázaro",
-  "license": "ISC",
+  "author": "Ali",
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
     "@jest/globals": "^29.3.1",
