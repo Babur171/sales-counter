@@ -6,14 +6,24 @@ const createUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().custom(password),
-    name: Joi.string().required(),
+    ownerName: Joi.string().required(),
+    phoneNumber: Joi.number().required(),
+    shopNumber: Joi.string().required(),
     role: Joi.string().required().valid(Role.USER, Role.ADMIN)
   })
 };
 
+const createEmploy = {
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    ownerId: Joi.number().required()
+  })
+};
 const getUsers = {
   query: Joi.object().keys({
-    name: Joi.string(),
+    ownerName: Joi.string(),
+    phoneNumber: Joi.number(),
+    shopNumber: Joi.string(),
     role: Joi.string(),
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
@@ -51,5 +61,6 @@ export default {
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  createEmploy
 };

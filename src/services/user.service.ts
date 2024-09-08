@@ -1,18 +1,15 @@
-import { User, Role, Prisma } from '@prisma/client';
+import { User, Role, Prisma, Employee } from '@prisma/client';
 import httpStatus from 'http-status';
 import prisma from '../client';
 import ApiError from '../utils/ApiError';
 import { encryptPassword } from '../utils/encryption';
 
-/**
- * Create a user
- * @param {Object} userBody
- * @returns {Promise<User>}
- */
 const createUser = async (
   email: string,
   password: string,
-  name?: string,
+  ownerName: string,
+  shopName: string,
+  phoneNumber: number,
   role: Role = Role.USER
 ): Promise<User> => {
   if (await getUserByEmail(email)) {
@@ -21,22 +18,24 @@ const createUser = async (
   return prisma.user.create({
     data: {
       email,
-      name,
+      ownerName,
+      shopName,
+      phoneNumber,
       password: await encryptPassword(password),
       role
     }
   });
 };
 
-/**
- * Query for users
- * @param {Object} filter - Prisma filter
- * @param {Object} options - Query options
- * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
- * @param {number} [options.limit] - Maximum number of results per page (default = 10)
- * @param {number} [options.page] - Current page (default = 1)
- * @returns {Promise<QueryResult>}
- */
+const createEmployee = async (ownerId: number, employeeId: number): Promise<Employee> => {
+  return prisma.employee.create({
+    data: {
+      ownerId,
+      employeeId
+    }
+  });
+};
+
 const queryUsers = async <Key extends keyof User>(
   filter: object,
   options: {
@@ -69,18 +68,14 @@ const queryUsers = async <Key extends keyof User>(
   return users as Pick<User, Key>[];
 };
 
-/**
- * Get user by id
- * @param {ObjectId} id
- * @param {Array<Key>} keys
- * @returns {Promise<Pick<User, Key> | null>}
- */
 const getUserById = async <Key extends keyof User>(
   id: number,
   keys: Key[] = [
     'id',
     'email',
-    'name',
+    'ownerName',
+    'phoneNumber',
+    'shopName',
     'role',
     'isEmailVerified',
     'createdAt',
@@ -93,18 +88,14 @@ const getUserById = async <Key extends keyof User>(
   }) as Promise<Pick<User, Key> | null>;
 };
 
-/**
- * Get user by email
- * @param {string} email
- * @param {Array<Key>} keys
- * @returns {Promise<Pick<User, Key> | null>}
- */
 const getUserByEmail = async <Key extends keyof User>(
   email: string,
   keys: Key[] = [
     'id',
     'email',
-    'name',
+    'ownerName',
+    'phoneNumber',
+    'shopName',
     'role',
     'isEmailVerified',
     'createdAt',
@@ -117,18 +108,12 @@ const getUserByEmail = async <Key extends keyof User>(
   }) as Promise<Pick<User, Key> | null>;
 };
 
-/**
- * Update user by id
- * @param {ObjectId} userId
- * @param {Object} updateBody
- * @returns {Promise<User>}
- */
 const updateUserById = async <Key extends keyof User>(
   userId: number,
   updateBody: Prisma.UserUpdateInput,
-  keys: Key[] = ['id', 'email', 'name', 'role'] as Key[]
+  keys: Key[] = ['id', 'email', 'ownerName', 'role'] as Key[]
 ): Promise<Pick<User, Key> | null> => {
-  const user = await getUserById(userId, ['id', 'email', 'name']);
+  const user = await getUserById(userId, ['id', 'email', 'ownerName']);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
@@ -143,11 +128,6 @@ const updateUserById = async <Key extends keyof User>(
   return updatedUser as Pick<User, Key> | null;
 };
 
-/**
- * Delete user by id
- * @param {ObjectId} userId
- * @returns {Promise<User>}
- */
 const deleteUserById = async (userId: number): Promise<User> => {
   const user = await getUserById(userId);
   if (!user) {
@@ -163,5 +143,6 @@ export default {
   getUserById,
   getUserByEmail,
   updateUserById,
-  deleteUserById
+  deleteUserById,
+  createEmployee
 };

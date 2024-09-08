@@ -2,11 +2,20 @@ import httpStatus from 'http-status';
 import pick from '../utils/pick';
 import ApiError from '../utils/ApiError';
 import catchAsync from '../utils/catchAsync';
-import { userService } from '../services';
+import { emailService, userService } from '../services';
+import generatePassword from '../utils/helper';
+import exclude from '../utils/exclude';
 
 const createUser = catchAsync(async (req, res) => {
-  const { email, password, name, role } = req.body;
-  const user = await userService.createUser(email, password, name, role);
+  const { email, password, role, ownerName, phoneNumber, shopName } = req.body;
+  const user = await userService.createUser(
+    email,
+    password,
+    role,
+    ownerName,
+    phoneNumber,
+    shopName
+  );
   res.status(httpStatus.CREATED).send(user);
 });
 
@@ -35,10 +44,24 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const createEmploy = catchAsync(async (req, res) => {
+  const { email, ownerId, shopName, phoneNumber, ownerName } = req.body;
+
+  const password = generatePassword();
+  const newUser = await userService.createUser(email, password, ownerName, shopName, phoneNumber);
+  let userId = newUser.id;
+  const employ = await userService.createEmployee(userId, ownerId);
+
+  await emailService?.sendNewPasswordEmail(email, password);
+  // const userWithoutPassword = exclude(employ, ['password', 'createdAt', 'updatedAt']);
+  res.status(httpStatus.CREATED).send({ user: employ });
+});
+
 export default {
   createUser,
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  createEmploy
 };

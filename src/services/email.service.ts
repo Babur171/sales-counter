@@ -15,24 +15,11 @@ if (config.env !== 'test') {
     );
 }
 
-/**
- * Send an email
- * @param {string} to
- * @param {string} subject
- * @param {string} text
- * @returns {Promise}
- */
 const sendEmail = async (to: string, subject: string, text: string) => {
   const msg = { from: config.email.from, to, subject, text };
   await transport.sendMail(msg);
 };
 
-/**
- * Send reset password email
- * @param {string} to
- * @param {string} token
- * @returns {Promise}
- */
 const sendResetPasswordEmail = async (to: string, token: string) => {
   const subject = 'Reset password';
   // replace this url with the link to the reset password page of your front-end app
@@ -43,12 +30,16 @@ If you did not request any password resets, then ignore this email.`;
   await sendEmail(to, subject, text);
 };
 
-/**
- * Send verification email
- * @param {string} to
- * @param {string} token
- * @returns {Promise}
- */
+const sendNewPasswordEmail = async (email: string, password: string) => {
+  const subject = 'Created New Employ';
+  // replace this url with the link to the reset password page of your front-end app
+  const text = `Dear user,
+Your Email: ${email}
+Your Password: ${password}
+You can use these credentials for login.`;
+  await sendEmail(email, subject, text);
+};
+
 const sendVerificationEmail = async (to: string, token: string) => {
   const subject = 'Email Verification';
   // replace this url with the link to the email verification page of your front-end app
@@ -62,5 +53,6 @@ export default {
   transport,
   sendEmail,
   sendResetPasswordEmail,
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendNewPasswordEmail
 };

@@ -13,14 +13,29 @@ datasource db {
 model User {
   id              Int      @id @default(autoincrement())
   email           String   @unique
-  name            String?
+  ownerName       String?
+  shopName        String?
+  address         String?
+  phoneNumber     Int
   password        String
   role            Role     @default(USER)
   isEmailVerified Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   Token           Token[]
+  ownerStores     Employee[]  @relation("OwnerRelation")
+  employedStores  Employee[]  @relation("EmployeeRelation")
 }
+
+
+model Employee {
+   id           Int  @id @default(autoincrement())
+  owner         User @relation("OwnerRelation", fields: [ownerId], references: [id])
+  ownerId       Int
+  employee      User @relation("EmployeeRelation", fields: [employeeId], references: [id])
+  employeeId    Int
+}
+
 
 model Token {
   id          Int       @id @default(autoincrement())
@@ -31,6 +46,34 @@ model Token {
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id])
   userId      Int
+}
+
+model ProductCategory {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  products        Product[]
+}
+
+model Product {
+  id            Int       @id @default(autoincrement())
+  productId     Int    @unique
+  productName   String
+  category      ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId    Int
+  genderType    GenderType
+  price         Int
+  quantity      Int
+  actualPrice   Int
+  salePrice     Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum GenderType {
+  MALE
+  FEMALE
 }
 
 enum Role {

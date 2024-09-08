@@ -4,6 +4,9 @@ import { password } from './custom.validation';
 const register = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
+    ownerName: Joi.string().required(),
+    phoneNumber: Joi.number().required(),
+    shopName: Joi.string().required(),
     password: Joi.string().required().custom(password)
   })
 };
