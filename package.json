@@ -22,7 +22,7 @@
     "docker:dev-db:stop": "docker-compose -f docker-compose.only-db-dev.yml down",
     "prepare": "husky install",
     "build": "rimraf build && tsc -p tsconfig.json",
-    "postbuild": "prisma generate"
+    "postinstall": "prisma generate"
   },
   "keywords": [
     "node",
