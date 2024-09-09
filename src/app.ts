@@ -47,6 +47,7 @@ passport.use('jwt', jwtStrategy);
 if (config.env === 'production') {
   app.use('/api/v1', authLimiter);
 }
+app.set('trust proxy', 1);
 
 // v1 api routes
 app.use('/api/v1', routes);
