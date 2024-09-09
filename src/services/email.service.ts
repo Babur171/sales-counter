@@ -2,22 +2,22 @@ import nodemailer from 'nodemailer';
 import config from '../config/config';
 import logger from '../config/logger';
 
-const transport = nodemailer.createTransport(config.email.smtp);
+// const transport = nodemailer.createTransport(config.email.smtp);
 /* istanbul ignore next */
 if (config.env !== 'test') {
-  transport
-    .verify()
-    .then(() => logger.info('Connected to email server'))
-    .catch(() =>
-      logger.warn(
-        'Unable to connect to email server. Make sure you have configured the SMTP options in .env'
-      )
-    );
+  // transport
+  //   .verify()
+  //   .then(() => logger.info('Connected to email server'))
+  //   .catch(() =>
+  //     logger.warn(
+  //       'Unable to connect to email server. Make sure you have configured the SMTP options in .env'
+  //     )
+  //   );
 }
 
 const sendEmail = async (to: string, subject: string, text: string) => {
   const msg = { from: config.email.from, to, subject, text };
-  await transport.sendMail(msg);
+  // await transport.sendMail(msg);
 };
 
 const sendResetPasswordEmail = async (to: string, token: string) => {
@@ -50,7 +50,7 @@ To verify your email, click on this link: ${verificationEmailUrl}`;
 };
 
 export default {
-  transport,
+  // transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
