@@ -128,8 +128,8 @@ type ProductWithSolidItem = Omit<Product, 'SoldProducts'> & {
 const getProducts = async <Key extends keyof Product>(
   filter: object,
   options: {
-    limit?: number;
-    page?: number;
+    limit?: string;
+    page?: string;
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   },
@@ -146,13 +146,32 @@ const getProducts = async <Key extends keyof Product>(
     'createdAt',
     'updatedAt'
   ] as Key[]
-): Promise<ProductWithSolidItem[]> => {
-  const page = options.page ?? 1;
-  const limit = options.limit ?? 10;
+): Promise<{
+  products: ProductWithSolidItem[];
+  totalPages: number;
+  currentPage: number;
+  nextPage: number | null;
+  totalItems: number;
+}> => {
+  // Convert `limit` and `page` to numbers, default to sensible values if not provided
+  const page = parseInt(options.page ?? '1', 10);
+  const limit = parseInt(options.limit ?? '10', 10);
   const sortBy = options.sortBy;
   const sortType = options.sortType ?? 'desc';
 
-  // Fetch products with total sold quantities and exclude SoldProducts array
+  if (isNaN(page) || isNaN(limit)) {
+    throw new Error('Page and limit must be valid numbers.');
+  }
+
+  // Fetch total count of products that match the filter
+  const totalItems = await prisma.product.count({
+    where: filter
+  });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalItems / limit);
+
+  // Fetch paginated products with total sold quantities and exclude SoldProducts array
   const products = await prisma.product.findMany({
     where: filter,
     select: {
@@ -169,8 +188,8 @@ const getProducts = async <Key extends keyof Product>(
         }
       }
     },
-    skip: (page - 1) * limit,
-    take: limit,
+    skip: (page - 1) * limit, // Ensure skip is calculated as an integer
+    take: limit, // Ensure take is also an integer
     orderBy: sortBy ? { [sortBy]: sortType } : undefined
   });
 
@@ -187,9 +206,18 @@ const getProducts = async <Key extends keyof Product>(
     } as unknown as ProductWithSolidItem;
   });
 
-  return productsWithSolidItem;
-};
+  // Determine next page
+  const nextPage = page < totalPages ? page + 1 : null;
 
+  // Return the paginated products, total pages, current page, next page, and total items
+  return {
+    products: productsWithSolidItem,
+    totalPages,
+    currentPage: page,
+    nextPage, // Next page if available, otherwise null
+    totalItems
+  };
+};
 // const getProductById = async <Key extends keyof Product>(
 //   id: number,
 //   keys: Key[] = [
