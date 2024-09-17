@@ -10,6 +10,7 @@ const createUser = async (
   ownerName: string,
   shopName: string,
   phoneNumber: number,
+  address: string,
   role: Role = Role.USER
 ): Promise<User> => {
   if (await getUserByEmail(email)) {
@@ -22,7 +23,8 @@ const createUser = async (
       shopName,
       phoneNumber,
       password: await encryptPassword(password),
-      role
+      role,
+      address
     }
   });
 };
@@ -44,15 +46,7 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string;
     sortType?: 'asc' | 'desc';
   },
-  keys: Key[] = [
-    'id',
-    'email',
-    'name',
-    'role',
-    'isEmailVerified',
-    'createdAt',
-    'updatedAt'
-  ] as Key[]
+  keys: Key[] = ['id', 'email', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key>[]> => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;

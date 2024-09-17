@@ -11,6 +11,10 @@ router
   .post(auth('user'), validate(productValidation.createProduct), productsController.createProduct)
   .get(auth('user'), productsController.getProducts);
 
+router
+  .route('/sell-products')
+  .post(auth('user'), validate(productValidation.sellProducts), productsController.sellProduct);
+
 router.route('/category').get(auth('user'), productsController.getProductCategory);
 router
   .route('/category')

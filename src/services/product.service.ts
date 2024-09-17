@@ -1,13 +1,19 @@
-import { User, Role, Product, ProductCategory, GenderType } from '@prisma/client';
+import { User, Role, Product, ProductCategory, GenderType, SoldProduct } from '@prisma/client';
 import httpStatus from 'http-status';
 import prisma from '../client';
 import ApiError from '../utils/ApiError';
+
+interface ProductPurchase {
+  productId: number;
+  quantity: number;
+  totalPrice: number;
+}
 
 const createProduct = async (
   productId: number,
   productName: string,
   categoryId: number,
-  genderType: GenderType = GenderType.MALE,
+  genderType: GenderType,
   price: number,
   quantity: number,
   actualPrice: number,
@@ -25,6 +31,61 @@ const createProduct = async (
       salePrice
     }
   });
+};
+
+const sellProducts = async (products: ProductPurchase[]): Promise<{ message: string } | Error> => {
+  try {
+    // Extract product IDs from the request
+    const productIds = products.map((item) => item.productId);
+
+    // Fetch all product data in one query
+    const fetchedProducts = await prisma.product.findMany({
+      where: { productId: { in: productIds } }
+    });
+
+    const productUpdates: any[] = [];
+    const soldProductRecords: any[] = [];
+
+    for (const item of products) {
+      const product = fetchedProducts.find((p) => p.productId === item.productId);
+
+      // Check if the product exists
+      if (!product) {
+        throw new Error(`Product with ID ${item.productId} not found.`);
+      }
+
+      // Check for sufficient quantity
+      if (product.quantity < item.quantity) {
+        throw new Error(`Insufficient quantity for product ${product.productId}.`);
+      }
+
+      // Prepare product update (reduce quantity)
+      productUpdates.push({
+        where: { productId: product.productId },
+        data: { quantity: product.quantity - item.quantity }
+      });
+
+      // Prepare sold product record
+      soldProductRecords.push({
+        productId: product.id,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice
+      });
+    }
+
+    // Perform batch updates for products
+    for (const update of productUpdates) {
+      await prisma.product.update(update);
+    }
+
+    // Create sold product records
+    await prisma.soldProduct.createMany({ data: soldProductRecords });
+
+    // Return a success message
+    return { message: 'Products sold successfully!' };
+  } catch (error) {
+    return Promise.reject(error); // Return the error as a rejected promise
+  }
 };
 
 const createProductCategory = async (name: string): Promise<ProductCategory> => {
@@ -59,6 +120,11 @@ const queryGetProductCategory = async <Key extends keyof ProductCategory>(
   return category as Pick<ProductCategory, Key>[];
 };
 
+type ProductWithSolidItem = Omit<Product, 'SoldProducts'> & {
+  category: { id: number; name: string };
+  solidItem: number;
+};
+
 const getProducts = async <Key extends keyof Product>(
   filter: object,
   options: {
@@ -76,29 +142,52 @@ const getProducts = async <Key extends keyof Product>(
     'quantity',
     'actualPrice',
     'salePrice',
+    'genderType',
     'createdAt',
     'updatedAt'
   ] as Key[]
-): Promise<Pick<Product, Key>[]> => {
+): Promise<ProductWithSolidItem[]> => {
   const page = options.page ?? 1;
   const limit = options.limit ?? 10;
   const sortBy = options.sortBy;
   const sortType = options.sortType ?? 'desc';
+
+  // Fetch products with total sold quantities and exclude SoldProducts array
   const products = await prisma.product.findMany({
     where: filter,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {
+    select: {
+      ...keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
       category: {
         select: {
           id: true,
           name: true
         }
+      },
+      _count: {
+        select: {
+          SoldProducts: true // Count of SoldProducts
+        }
       }
-    }),
+    },
     skip: (page - 1) * limit,
     take: limit,
     orderBy: sortBy ? { [sortBy]: sortType } : undefined
   });
-  return products as (Pick<Product, Key> & { category: { id: number; name: string } })[];
+
+  // Map and compute the `solidItem` field, excluding `_count`
+  const productsWithSolidItem: ProductWithSolidItem[] = products.map((product) => {
+    const totalSoldQuantity = product._count.SoldProducts;
+
+    const { _count, ...productWithoutCount } = product;
+
+    return {
+      ...productWithoutCount,
+      solidItem: totalSoldQuantity,
+      category: product.category
+    } as unknown as ProductWithSolidItem;
+  });
+
+  return productsWithSolidItem;
 };
 
 // const getProductById = async <Key extends keyof Product>(
@@ -155,7 +244,8 @@ export default {
   createProduct,
   getProducts,
   createProductCategory,
-  queryGetProductCategory
+  queryGetProductCategory,
+  sellProducts
   // queryUsers,
   // getUserById,
   // getUserByEmail,

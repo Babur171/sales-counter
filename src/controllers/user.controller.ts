@@ -45,10 +45,17 @@ const deleteUser = catchAsync(async (req, res) => {
 });
 
 const createEmploy = catchAsync(async (req, res) => {
-  const { email, ownerId, shopName, phoneNumber, ownerName } = req.body;
+  const { email, ownerId, shopName, phoneNumber, ownerName, address } = req.body;
 
   const password = generatePassword();
-  const newUser = await userService.createUser(email, password, ownerName, shopName, phoneNumber);
+  const newUser = await userService.createUser(
+    email,
+    password,
+    ownerName,
+    shopName,
+    phoneNumber,
+    address
+  );
   let userId = newUser.id;
   const employ = await userService.createEmployee(userId, ownerId);
 

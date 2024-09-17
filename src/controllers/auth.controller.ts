@@ -5,10 +5,16 @@ import exclude from '../utils/exclude';
 import { User } from '@prisma/client';
 
 const register = catchAsync(async (req, res) => {
-  const { email, password, ownerName, phoneNumber, shopName } = req.body;
-  console.log('dddddddddddddd', req.body);
+  const { email, password, ownerName, phoneNumber, shopName, address } = req.body;
 
-  const user = await userService.createUser(email, password, ownerName, shopName, phoneNumber);
+  const user = await userService.createUser(
+    email,
+    password,
+    ownerName,
+    shopName,
+    phoneNumber,
+    address
+  );
   const userWithoutPassword = exclude(user, ['password', 'createdAt', 'updatedAt']);
   res.status(httpStatus.CREATED).send({ user: userWithoutPassword });
 });

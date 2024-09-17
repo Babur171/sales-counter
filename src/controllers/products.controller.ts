@@ -45,7 +45,7 @@ const getProductCategory = catchAsync(async (req, res) => {
 });
 
 const getProducts = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['productName']);
+  const filter = pick(req.query, ['productName', 'genderType']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
   const user = await productService.getProducts(filter, options);
@@ -53,6 +53,13 @@ const getProducts = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
   res.send(user);
+});
+
+const sellProduct = catchAsync(async (req, res) => {
+  const products = req.body;
+
+  const user = await productService.sellProducts(products);
+  res.status(httpStatus.CREATED).send(user);
 });
 
 // const getProductsById = catchAsync(async (req, res) => {
@@ -77,7 +84,8 @@ export default {
   createProduct,
   getProducts,
   createProductCategory,
-  getProductCategory
+  getProductCategory,
+  sellProduct
   // getUsers,
   // getUser,
   // updateUser,
