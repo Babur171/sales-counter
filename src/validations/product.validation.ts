@@ -21,6 +21,17 @@ const createProduct = {
   })
 };
 
+const updateProduct = {
+  body: Joi.object().keys({
+    productId: Joi.number(),
+    productName: Joi.string(),
+    price: Joi.number(),
+    quantity: Joi.number(),
+    actualPrice: Joi.number(),
+    salePrice: Joi.number()
+  })
+};
+
 const sellProducts = {
   body: Joi.array()
     .items(
@@ -62,5 +73,6 @@ export default {
   getProductCategory,
   getProductById,
   getProductCategoryById,
-  sellProducts
+  sellProducts,
+  updateProduct
 };

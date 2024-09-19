@@ -64,11 +64,26 @@ const createEmploy = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send({ user: employ });
 });
 
+const expense = catchAsync(async (req, res) => {
+  const { title, purpose, price } = req.body;
+  const expense = await userService.createUserExpense(title, purpose, price);
+  res.status(httpStatus.CREATED).send({ expense: expense });
+});
+
+const getUserExpense = catchAsync(async (req, res) => {
+  const filter = pick(req.query, ['title']);
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  const result = await userService.queryUsersExpense(filter, options);
+  res.send(result);
+});
+
 export default {
   createUser,
   getUsers,
   getUser,
   updateUser,
   deleteUser,
-  createEmploy
+  createEmploy,
+  expense,
+  getUserExpense
 };

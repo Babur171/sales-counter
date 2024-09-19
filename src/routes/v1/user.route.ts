@@ -12,7 +12,7 @@ router
   .get(auth('user'), validate(userValidation.getUsers), userController.getUsers);
 
 router
-  .route('/:userId')
+  .route('/profile/:userId')
   .get(auth('user'), validate(userValidation.getUser), userController.getUser)
   .patch(auth('admin'), validate(userValidation.updateUser), userController.updateUser)
   .delete(auth('admin'), validate(userValidation.deleteUser), userController.deleteUser);
@@ -20,6 +20,11 @@ router
 router
   .route('/employ')
   .post(auth('user'), validate(userValidation.createEmploy), userController.createEmploy);
+
+router
+  .route('/expense')
+  .get(auth('user'), userController.getUserExpense)
+  .post(auth('user'), validate(userValidation.userExpense), userController.expense);
 
 export default router;
 

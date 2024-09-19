@@ -9,6 +9,11 @@ interface ProductPurchase {
   totalPrice: number;
 }
 
+type ProductWithSolidItem = Omit<Product, 'SoldProducts'> & {
+  category: { id: number; name: string };
+  solidItem: number;
+};
+
 const createProduct = async (
   productId: number,
   productName: string,
@@ -19,6 +24,25 @@ const createProduct = async (
   actualPrice: number,
   salePrice: number
 ): Promise<Product> => {
+  // Step 1: Check if the category exists
+  const category = await prisma.productCategory.findUnique({
+    where: { id: categoryId }
+  });
+
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, `Category with ID ${categoryId} does not exist.`);
+  }
+
+  // Step 2: Check if the productId already exists
+  const existingProduct = await prisma.product.findUnique({
+    where: { productId }
+  });
+
+  if (existingProduct) {
+    throw new ApiError(httpStatus.NOT_FOUND, `Product with ID ${productId} already exists.`);
+  }
+
+  // Step 3: Create the product if the category exists and productId is unique
   return prisma.product.create({
     data: {
       productId,
@@ -96,6 +120,34 @@ const createProductCategory = async (name: string): Promise<ProductCategory> => 
   });
 };
 
+const updateProduct = async (
+  productId: number,
+  updatedData: Partial<{
+    productName: string;
+    price: number;
+    quantity: number;
+    actualPrice: number;
+    salePrice: number;
+  }>
+): Promise<Product> => {
+  // Update the product and return the updated product
+  const updatedProduct = await prisma.product.update({
+    where: { productId },
+    data: {
+      ...updatedData
+    }
+  });
+
+  // Store updated product data in NewStock
+  await prisma.newStock.create({
+    data: {
+      productId: updatedProduct.id
+    }
+  });
+
+  return updatedProduct;
+};
+
 const queryGetProductCategory = async <Key extends keyof ProductCategory>(
   filter: object,
   options: {
@@ -118,11 +170,6 @@ const queryGetProductCategory = async <Key extends keyof ProductCategory>(
     orderBy: sortBy ? { [sortBy]: sortType } : undefined
   });
   return category as Pick<ProductCategory, Key>[];
-};
-
-type ProductWithSolidItem = Omit<Product, 'SoldProducts'> & {
-  category: { id: number; name: string };
-  solidItem: number;
 };
 
 const getProducts = async <Key extends keyof Product>(
@@ -153,7 +200,6 @@ const getProducts = async <Key extends keyof Product>(
   nextPage: number | null;
   totalItems: number;
 }> => {
-  // Convert `limit` and `page` to numbers, default to sensible values if not provided
   const page = parseInt(options.page ?? '1', 10);
   const limit = parseInt(options.limit ?? '10', 10);
   const sortBy = options.sortBy;
@@ -170,8 +216,6 @@ const getProducts = async <Key extends keyof Product>(
 
   // Calculate total pages
   const totalPages = Math.ceil(totalItems / limit);
-
-  // Fetch paginated products with total sold quantities and exclude SoldProducts array
   const products = await prisma.product.findMany({
     where: filter,
     select: {
@@ -193,7 +237,6 @@ const getProducts = async <Key extends keyof Product>(
     orderBy: sortBy ? { [sortBy]: sortType } : undefined
   });
 
-  // Map and compute the `solidItem` field, excluding `_count`
   const productsWithSolidItem: ProductWithSolidItem[] = products.map((product) => {
     const totalSoldQuantity = product._count.SoldProducts;
 
@@ -209,7 +252,6 @@ const getProducts = async <Key extends keyof Product>(
   // Determine next page
   const nextPage = page < totalPages ? page + 1 : null;
 
-  // Return the paginated products, total pages, current page, next page, and total items
   return {
     products: productsWithSolidItem,
     totalPages,
@@ -218,65 +260,12 @@ const getProducts = async <Key extends keyof Product>(
     totalItems
   };
 };
-// const getProductById = async <Key extends keyof Product>(
-//   id: number,
-//   keys: Key[] = [
-//     'id',
-//     'productId',
-//     'productName',
-//     'categoryId',
-//     'price',
-//     'quantity',
-//     'actualPrice',
-//     'salePrice',
-//     'createdAt',
-//     'updatedAt'
-//   ] as Key[]
-// ): Promise<Pick<Product, Key> | null> => {
-//   return prisma.product.findUnique({
-//     where: { id },
-//     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
-//   }) as Promise<Pick<Product, Key> | null>;
-// };
-
-// const getUserByEmail = async <Key extends keyof User>(
-//   email: string,
-//   keys: Key[] = [
-//     'id',
-//     'email',
-//     'ownerName',
-//     'phoneNumber',
-//     'shopName',
-//     'role',
-//     'isEmailVerified',
-//     'createdAt',
-//     'updatedAt'
-//   ] as Key[]
-// ): Promise<Pick<User, Key> | null> => {
-//   return prisma.user.findUnique({
-//     where: { email },
-//     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
-//   }) as Promise<Pick<User, Key> | null>;
-// };
-
-// const deleteUserById = async (userId: number): Promise<User> => {
-//   const user = await getUserById(userId);
-//   if (!user) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-//   }
-//   await prisma.user.delete({ where: { id: user.id } });
-//   return user;
-// };
 
 export default {
   createProduct,
   getProducts,
   createProductCategory,
   queryGetProductCategory,
-  sellProducts
-  // queryUsers,
-  // getUserById,
-  // getUserByEmail,
-  // updateUserById,
-  // deleteUserById,
+  sellProducts,
+  updateProduct
 };

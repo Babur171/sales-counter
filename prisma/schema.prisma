@@ -25,7 +25,7 @@ model User {
   Token           Token[]
   ownerStores     Employee[]  @relation("OwnerRelation")
   employedStores  Employee[]  @relation("EmployeeRelation")
-  soldProducts    SoldProduct[] @relation("SoldProduct")
+  soldProducts    SoldProduct[]
 }
 
 
@@ -70,7 +70,8 @@ model Product {
   salePrice     Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  SoldProducts SoldProduct[]
+  SoldProducts  SoldProduct[]
+  newStock      NewStock[]
 }
 
 model SoldProduct {
@@ -80,8 +81,25 @@ model SoldProduct {
   totalPrice  Float
   product     Product  @relation(fields: [productId], references: [id])
   userId      Int
-  user        User     @relation("SoldProduct", fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())
+}
+
+model NewStock {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  newProduct  Product  @relation(fields: [productId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  title       String
+  price       Int
+  purpose     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum GenderType {
