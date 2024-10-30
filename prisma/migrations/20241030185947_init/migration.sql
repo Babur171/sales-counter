@@ -58,7 +58,8 @@ CREATE TABLE "ProductCategory" (
 
 -- CreateTable
 CREATE TABLE "Product" (
-    "productId" SERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
     "productName" TEXT NOT NULL,
     "categoryId" INTEGER NOT NULL,
     "genderType" "GenderType" NOT NULL,
@@ -69,11 +70,17 @@ CREATE TABLE "Product" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Product_pkey" PRIMARY KEY ("productId")
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductCategory_name_key" ON "ProductCategory"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_productId_key" ON "Product"("productId");
 
 -- AddForeignKey
 ALTER TABLE "Employee" ADD CONSTRAINT "Employee_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -98,8 +98,6 @@ const getUserByEmail = async <Key extends keyof User>(
     'shopName',
     'role',
     'isEmailVerified',
-    'createdAt',
-    'updatedAt'
   ] as Key[]
 ): Promise<Pick<User, Key> | null> => {
   return prisma.user.findUnique({
