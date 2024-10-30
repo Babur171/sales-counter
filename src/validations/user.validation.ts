@@ -19,6 +19,14 @@ const createEmploy = {
     ownerId: Joi.number().required()
   })
 };
+
+const userExpense = {
+  body: Joi.object().keys({
+    title: Joi.string().required(),
+    purpose: Joi.string().required(),
+    price: Joi.number().required()
+  })
+};
 const getUsers = {
   query: Joi.object().keys({
     ownerName: Joi.string(),
@@ -62,5 +70,6 @@ export default {
   getUser,
   updateUser,
   deleteUser,
-  createEmploy
+  createEmploy,
+  userExpense
 };

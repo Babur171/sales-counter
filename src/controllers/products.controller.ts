@@ -2,9 +2,6 @@ import httpStatus from 'http-status';
 import pick from '../utils/pick';
 import ApiError from '../utils/ApiError';
 import catchAsync from '../utils/catchAsync';
-import { emailService, userService } from '../services';
-import generatePassword from '../utils/helper';
-import exclude from '../utils/exclude';
 import productService from '../services/product.service';
 
 const createProduct = catchAsync(async (req, res) => {
@@ -45,7 +42,7 @@ const getProductCategory = catchAsync(async (req, res) => {
 });
 
 const getProducts = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['productName']);
+  const filter = pick(req.query, ['productName', 'genderType']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
   const user = await productService.getProducts(filter, options);
@@ -55,32 +52,24 @@ const getProducts = catchAsync(async (req, res) => {
   res.send(user);
 });
 
-// const getProductsById = catchAsync(async (req, res) => {
-//   const user = await productService.getProducts(req.params.userId);
-//   if (!user) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-//   }
-//   res.send(user);
-// });
+const sellProduct = catchAsync(async (req, res) => {
+  const products = req.body;
+  const user = await productService.sellProducts(products);
+  res.status(httpStatus.CREATED).send(user);
+});
 
-// const updateUser = catchAsync(async (req, res) => {
-//   const user = await userService.updateUserById(req.params.userId, req.body);
-//   res.send(user);
-// });
+const updateProduct = catchAsync(async (req, res) => {
+  const { productId } = req.params;
 
-// const deleteUser = catchAsync(async (req, res) => {
-//   await userService.deleteUserById(req.params.userId);
-//   res.status(httpStatus.NO_CONTENT).send();
-// });
+  const user = await productService.updateProduct(Number(productId), req.body);
+  res.send(user);
+});
 
 export default {
   createProduct,
   getProducts,
   createProductCategory,
-  getProductCategory
-  // getUsers,
-  // getUser,
-  // updateUser,
-  // deleteUser,
-  // createEmploy
+  getProductCategory,
+  sellProduct,
+  updateProduct
 };
